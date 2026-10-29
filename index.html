@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>New Comland Browser</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff;--ink:#000;--mute:#5a5a5a;--line:#d9d9d9;--panel:#f4f4f4;--red:#f00;--teal:#14f5b8;--pink:#ff0a54;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#111;--ink:#f5f5f5;--mute:#a5a5a5;--line:#333;--panel:#1c1c1c}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#111;--ink:#f5f5f5;--mute:#a5a5a5;--line:#333;--panel:#1c1c1c}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--pink);outline-offset:1px}
+/* stripe motif: the flag's black bars frame the window */
+.tabs{display:flex;align-items:flex-end;gap:2px;padding:6px 10px 0;background:var(--panel);border-bottom:1px solid var(--line);overflow-x:auto;min-height:42px}
+.tab{display:flex;align-items:center;gap:8px;max-width:200px;min-width:90px;padding:7px 10px;border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;background:var(--panel);color:var(--mute);font-size:13px;white-space:nowrap}
+.tab span{overflow:hidden;text-overflow:ellipsis;flex:1;text-align:left}
+.tab.on{background:var(--bg);color:var(--ink);box-shadow:inset 0 3px 0 var(--ink)}
+.tab .x{border:0;background:none;padding:0 2px;line-height:1;opacity:.6}
+.tab .x:hover{opacity:1;color:var(--red)}
+.plus{border:0;background:none;font-size:20px;padding:4px 10px}
+.bar{display:flex;gap:6px;align-items:center;padding:8px 10px;background:var(--bg);border-bottom:1px solid var(--line)}
+.ib{width:34px;height:34px;border:1px solid var(--line);border-radius:50%;background:var(--bg);font-size:16px;flex:none}
+.ib:hover:not(:disabled){background:var(--ink);color:var(--bg)}
+.ib:disabled{opacity:.35;cursor:default}
+.addr{flex:1;display:flex;align-items:center;border:2px solid var(--ink);border-radius:20px;padding:0 12px;height:36px;min-width:0;position:relative}
+.addr:focus-within{border-color:transparent;background:linear-gradient(var(--bg),var(--bg)) padding-box,linear-gradient(135deg,var(--teal),var(--pink)) border-box;border:2px solid transparent}
+.addr input{flex:1;border:0;background:none;color:inherit;font:inherit;font-size:14px;outline:0;min-width:0}
+.dot{width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--pink));margin-right:8px;flex:none}
+.marks{display:flex;gap:6px;padding:5px 10px;border-bottom:1px solid var(--line);overflow-x:auto;font-size:13px;min-height:34px;align-items:center}
+.marks button{border:0;background:var(--panel);border-radius:14px;padding:4px 12px;white-space:nowrap}
+.marks button:hover{background:var(--ink);color:var(--bg)}
+.marks em{color:var(--mute);font-style:normal}
+main{flex:1;position:relative;min-height:0;background:var(--bg)}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+.note{position:absolute;left:0;right:0;bottom:0;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--panel);border-top:1px solid var(--line);font-size:13px;z-index:2}
+.note a,.note button{color:var(--ink);font-weight:600}
+.note button{border:0;background:none;text-decoration:underline}
+.page{position:absolute;inset:0;overflow:auto;padding:24px 20px 60px}
+.wrap{max-width:760px;margin:0 auto}
+.hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding-top:2vh}
+.hero svg{width:min(560px,92%);height:auto;border:1px solid var(--line)}
+h1{font-size:clamp(30px,6vw,52px);font-weight:800;margin:6px 0 0;letter-spacing:-.02em;line-height:1}
+.hero p{margin:0;color:var(--mute);max-width:46ch}
+.search{display:flex;width:min(560px,100%);border:2px solid var(--ink);border-radius:28px;overflow:hidden}
+.search input{flex:1;border:0;padding:12px 18px;font:inherit;background:none;color:inherit;outline:0;min-width:0}
+.search button{border:0;background:var(--ink);color:var(--bg);padding:0 22px;font-weight:600}
+.quick{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;width:min(760px,100%);margin-top:8px}
+.quick button{border:1px solid var(--line);background:var(--bg);padding:14px 10px;border-radius:10px;font-weight:600;display:flex;flex-direction:column;gap:2px;align-items:center}
+.quick button small{font-weight:400;color:var(--mute)}
+.quick button:hover{border-color:var(--ink)}
+h2{font-size:26px;margin:0 0 12px}
+.list{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.row button.go{border:0;background:none;text-align:left;flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.row small{display:block;color:var(--mute);font-weight:400}
+.row .rm{border:0;background:none;color:var(--red)}
+.pill{border:1px solid var(--ink);background:var(--bg);border-radius:18px;padding:7px 16px;font-weight:600}
+.pill:hover{background:var(--ink);color:var(--bg)}
+.card{border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:12px}
+.card p{margin:6px 0 0;color:var(--mute);line-height:1.5}
+.blocked{background:#fff;color:#000;display:flex;align-items:center;justify-content:center}
+.bwrap{display:flex;flex-direction:column;align-items:center;text-align:center;gap:18px;max-width:640px}
+.bwrap h1{font-size:clamp(34px,7vw,60px);margin:0}
+.bwrap h2{font-size:clamp(18px,3.4vw,28px);margin:0;font-weight:800;line-height:1.2}
+.bwrap svg{width:min(380px,80%);height:auto}
+.modes{display:flex;gap:6px;margin-bottom:16px}
+.modes button{border:1px solid var(--line);background:var(--bg);border-radius:18px;padding:7px 18px;font-weight:600}
+.modes button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.muted{color:var(--mute);font-size:13px}
+.info{line-height:1.6;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.grid figure{margin:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.grid img{width:100%;display:block;aspect-ratio:1}
+.grid figcaption{padding:8px 10px;font-size:13px;color:#000;border-top:1px solid var(--line)}
+@media (prefers-reduced-motion:no-preference){.hero svg{animation:in .6s ease-out}@keyframes in{from{opacity:0;transform:translateY(8px)}}}
+</style>
+</head>
+<body>
+<div class="tabs" id="tabs" role="tablist"></div>
+<div class="bar">
+  <button class="ib" id="reload" title="Reload" aria-label="Reload">↻</button>
+  <button class="ib" id="home" title="Home" aria-label="Home">⌂</button>
+  <div class="addr"><span class="dot"></span><input id="url" type="text" spellcheck="false" autocomplete="off" placeholder="Search or enter an address" aria-label="Address"></div>
+  <button class="ib" id="star" title="Bookmark this page" aria-label="Bookmark this page">☆</button>
+  <button class="ib" id="ext" title="Open in a real browser tab" aria-label="Open in a real browser tab">↗</button>
+</div>
+<div class="marks" id="marks"></div>
+<main id="view"></main>
+
+<script>
+const FLAG=`<svg viewBox="0 0 1408 749" role="img" aria-label="Flag of New Comland"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14f5b8"/><stop offset="1" stop-color="#ff0a54"/></linearGradient></defs>
+<rect width="1408" height="749" fill="#fff"/>
+<g fill="#000"><rect x="37" y="199" width="38" height="550"/><rect x="110" y="199" width="38" height="550"/><rect x="190" y="199" width="38" height="550"/><rect x="270" y="199" width="38" height="550"/><rect x="357" y="199" width="38" height="550"/>
+<rect x="1015" width="38" height="749"/><rect x="1098" width="38" height="749"/><rect x="1190" width="38" height="749"/><rect x="1286" width="38" height="749"/><rect x="1365" width="38" height="749"/></g>
+<rect width="92" height="199" fill="#f00"/><rect x="299" width="102" height="199" fill="#f00"/>
+<polygon fill="#f00" points="196.2,11.3 213.1,39.5 227.9,33.5 221.2,79.2 243.0,60.6 246.5,74.7 272.9,67.6 265.9,87.3 274.7,99.3 237.7,131.0 238.8,147.2 199.0,140.8 199.0,184.1 193.4,184.1 193.4,140.8 153.6,147.2 154.7,131.0 117.7,99.3 126.5,87.3 119.5,67.6 145.9,74.7 149.4,60.6 171.2,79.2 164.5,33.5 179.3,39.5"/>
+<circle cx="715" cy="374" r="223" fill="url(#g)"/></svg>`;
+const SITES=[["Wikipedia","wikipedia.org","https://en.wikipedia.org/wiki/Main_Page"],["Internet Archive","archive.org","https://archive.org"],["OpenStreetMap","openstreetmap.org","https://www.openstreetmap.org/export/embed.html"],["Wikimedia Commons","commons.wikimedia.org","https://commons.wikimedia.org"]];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let tabs=[],cur=null,uid=0,marks=[];
+try{marks=JSON.parse(localStorage.getItem("comland-marks")||"[]")}catch(e){}
+function saveMarks(){try{localStorage.setItem("comland-marks",JSON.stringify(marks))}catch(e){}}
+
+const PHONE_URL="https://daynighttimegh.github.io/New-Comland-Phone/";
+const CALL_HOSTS=["zoom.us","zoom.com","meet.google.com","teams.microsoft.com","teams.live.com","skype.com","whatsapp.com","webex.com","gotomeeting.com","bluejeans.com","facetime.apple.com","messenger.com","voice.google.com","hangouts.google.com","meet.jit.si","whereby.com","viber.com","ringcentral.com","dialpad.com","8x8.com","discord.com","discord.gg","discord.app","discordapp.com","discordapp.net"];
+const CALL_TERMS=["zoom meeting","zoom call","zoom.us","zoom login","google meet","meet.google","microsoft teams","teams meeting","skype","whatsapp","facetime","webex","gotomeeting","jitsi","whereby","viber","ringcentral","video call","voice call","free calling","online calling","call online","calling site","calling website","discord","discord call","discord app","discord login"];
+function isCallSite(u){const h=hostOf(u);return CALL_HOSTS.some(d=>h===d||h.endsWith("."+d))}
+function callSearch(u){const q=(new URLSearchParams(u.split("?").slice(1).join("?")).get("q")||"").toLowerCase();return CALL_TERMS.some(w=>q.includes(w))}
+function isCallTarget(u){return u.startsWith("comland://search")?callSearch(u):(!u.startsWith("comland://")&&isCallSite(u))}
+function callPage(){return page(`<h2>These can’t be embedded</h2><p>Calling sites like this can’t run inside a browser page, but you can use New Comland’s phone service.</p><p><button class="pill" data-phone>Open New Comland Phone</button></p>`)}
+const BLOCKED=["tiktok.com","tiktokv.com","tiktokcdn.com","musical.ly","bet365.com","draftkings.com","fanduel.com","betmgm.com","caesarssportsbook.com","pokerstars.com","stake.com","williamhill.com","bovada.lv","888casino.com","888poker.com","betway.com","unibet.com","paddypower.com","betfair.com","1xbet.com","pointsbet.com","betrivers.com","espnbet.com","roobet.com","ladbrokes.com","partypoker.com","bwin.com","casino.com"];
+BLOCKED.push("pornhub.com","xvideos.com","xnxx.com","xhamster.com","redtube.com","youporn.com","spankbang.com","onlyfans.com","chaturbate.com","stripchat.com","thepiratebay.org","1337x.to","liveleak.com");
+const BLOCK_TLDS=[".xxx",".porn",".adult",".sex",".sexy",".casino",".bet",".poker",".bingo"];
+const HOST_TERMS=["porn","xxx","hentai","casino","camgirl","sexcam","bestgore"];
+const ADULT_URL=["porn","xxx","hentai","nsfw"];
+const BRAND_TERMS=["tiktok","musically","bet365","draftkings","fanduel","betmgm","pokerstars","bovada","betway","betfair","1xbet","onlyfans","pornhub","xvideos","xnxx","xhamster","chaturbate"];
+const BLOCK_TERMS=["porn","xxx","hentai","nsfw","erotic","camgirl","sex video","sex tape","nude","escort service","casino","gambling","sportsbook","sports betting","online betting","slot machine","online slots","youtube shorts","yt shorts","dark web market","darknet market","silk road market","buy drugs","buy cocaine","buy heroin","buy meth","buy guns online","ghost gun","buy fake id","fake passport","malware download","make ransomware","ransomware builder","keylogger download","hack someone","hack an account","hack account","phishing kit","credit card dump","carding","stolen credit","free robux","robux generator","free vbucks","gore video","real gore","beheading video","snuff film","pirated movies","warez","crack download"];
+function isBlocked(u){try{const x=new URL(u),h=x.hostname.toLowerCase();
+ if(BLOCKED.some(d=>h===d||h.endsWith("."+d)))return true;
+ if(BLOCK_TLDS.some(t=>h.endsWith(t)))return true;
+ if(HOST_TERMS.some(w=>h.includes(w)))return true;
+ if((h==="youtube.com"||h.endsWith(".youtube.com"))&&x.pathname.toLowerCase().startsWith("/shorts"))return true;
+ let p="";try{p=decodeURIComponent(x.pathname+x.search).toLowerCase()}catch(e){}
+ if(ADULT_URL.some(w=>p.includes(w)))return true;
+ return false}catch(e){return false}}
+function blockedPage(c){const d=document.createElement("div");d.className="page blocked";d.innerHTML=`<div class="bwrap"><h1>Website Blocked</h1>${FLAG}<h2>${c||"This website is Blocked by the Colandian Government"}</h2></div>`;return d}
+function normalize(t){
+  t=t.trim(); if(!t) return "comland://home";
+  if(/^comland:\/\//i.test(t)){const a=t.split("?");return a[0].toLowerCase()+(a.length>1?"?"+a.slice(1).join("?"):"")}
+  if(/^https?:\/\//i.test(t)) return t;
+  if(/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(t)) return "https://"+t;
+  return "comland://search?t=info&q="+encodeURIComponent(t);
+}
+function titleOf(u){
+  if(isBlocked(u)||(u.startsWith("comland://search")&&blockedSearch(u))) return "Website Blocked";
+  if(u.includes("youtube-nocookie.com/embed")||u==="comland://youtube") return "YouTube";
+  if(u==="comland://discord") return "Discord";
+  if(hostOf(u)==="e.widgetbot.io") return "Discord chat";
+  if(u.startsWith("comland://search")) return "Search";
+  if(u==="comland://home") return "New Comland";
+  if(u==="comland://bookmarks") return "Bookmarks";
+  if(u==="comland://about") return "About";
+  try{return new URL(u).hostname.replace(/^www\./,"")}catch(e){return u}
+}
+function newTab(u="comland://home"){
+  const t={id:++uid,hist:[u],i:0}; tabs.push(t); cur=t.id; render();
+}
+const tab=()=>tabs.find(t=>t.id===cur);
+function go(text){
+  const t=tab();let u=normalize(text);
+  u=isCallTarget(u)?PHONE_URL:ytEmbed(u);
+  t.hist=[u]; t.i=0; render();
+}
+function closeTab(id){
+  const k=tabs.findIndex(t=>t.id===id); tabs.splice(k,1);
+  if(!tabs.length) return newTab();
+  if(cur===id) cur=tabs[Math.max(0,k-1)].id; render();
+}
+function renderTabs(){
+  const el=$("tabs"); el.innerHTML="";
+  tabs.forEach(t=>{
+    const b=document.createElement("div"); b.className="tab"+(t.id===cur?" on":""); b.setAttribute("role","tab");
+    b.innerHTML=`<span>${esc(titleOf(t.hist[t.i]))}</span><button class="x" aria-label="Close tab">×</button>`;
+    b.onclick=()=>{cur=t.id;render()};
+    b.querySelector(".x").onclick=e=>{e.stopPropagation();closeTab(t.id)};
+    el.appendChild(b);
+  });
+  const p=document.createElement("button"); p.className="plus"; p.textContent="+"; p.setAttribute("aria-label","New tab"); p.onclick=()=>newTab(); el.appendChild(p);
+}
+function renderMarks(){
+  const el=$("marks");
+  el.innerHTML=marks.length?"":'<em>Star a page to pin it here.</em>';
+  marks.forEach(m=>{const b=document.createElement("button");b.textContent=m.title;b.onclick=()=>go(m.url);el.appendChild(b)});
+}
+function page(html){const d=document.createElement("div");d.className="page";d.innerHTML=`<div class="wrap">${html}</div>`;return d}
+function internal(u){
+  if(u==="comland://youtube") return page(`<h2>YouTube</h2><p>YouTube won’t show its home page inside another site, but single videos and playlists play fine. Paste a video link below.</p><form class="search" id="yf" style="margin:12px 0"><input id="yq" placeholder="Paste a YouTube link" aria-label="YouTube link"><button>Play</button></form><p class="muted">Shorts are blocked by the Colandian Government.</p>`);
+  if(u==="comland://discord"){
+    let sv={};try{sv=JSON.parse(localStorage.getItem("comland-discord")||"{}")}catch(e){}
+    return page(`<h2>Discord chat</h2><p>Discord won’t open inside another site, so this page shows your server’s live chat through WidgetBot instead. Set it up once:</p><div class="card"><p>1. In Discord, turn on Developer Mode (Settings, then Advanced).<br>2. Right-click your server and choose Copy Server ID. Right-click the channel and choose Copy Channel ID.<br>3. A server admin adds the WidgetBot bot to the server at <a href="https://widgetbot.io" target="_blank" rel="noopener noreferrer">widgetbot.io</a>.</p></div><form id="df" class="list" style="margin:12px 0"><div class="search" style="width:100%"><input id="dsv" inputmode="numeric" placeholder="Server ID" aria-label="Server ID" value="${esc(sv.s||"")}"></div><div class="search" style="width:100%"><input id="dch" inputmode="numeric" placeholder="Channel ID" aria-label="Channel ID" value="${esc(sv.c||"")}"><button>Open chat</button></div></form><p class="muted" id="dmsg"></p>`);
+  }
+  if(u.startsWith("comland://search")) return searchPage(u);
+  if(u==="comland://home") return page(`<div class="hero">${FLAG}<h1>New Comland</h1><p>The official browser of the nation. Search, visit a site, or pick a destination.</p>
+    <form class="search" id="sf"><input id="sq" placeholder="Search or enter an address" aria-label="Search"><button>Go</button></form>
+    <div class="quick"><button data-u="comland://bookmarks">Bookmarks<small>${marks.length} saved</small></button><button data-u="comland://about">About<small>this browser</small></button></div></div>`);
+  if(u==="comland://bookmarks") return page(`<h2>Bookmarks</h2><div class="list">${marks.length?marks.map((m,i)=>`<div class="row"><button class="go" data-u="${esc(m.url)}">${esc(m.title)}<small>${esc(m.url)}</small></button><button class="rm" data-r="${i}">Remove</button></div>`).join(""):'<p>No bookmarks yet. Press ☆ on any page to save it.</p>'}</div>`);
+  if(u==="comland://about") return page(`<h2>About this browser</h2><div class="card"><strong>Built for New Comland</strong><p>Tabs, history, bookmarks and an address bar, wearing the national flag’s black stripes and teal-to-pink sun.</p></div><div class="card"><strong>Why some sites stay blank</strong><p>Many websites forbid being shown inside another page. When that happens, use ↗ in the toolbar to open the site in a real browser tab.</p></div><div class="card"><strong>Internal addresses</strong><p>comland://home, comland://bookmarks, comland://about</p></div>`);
+  if(u.startsWith("comland://search")){
+    const q=decodeURIComponent((u.split("q=")[1]||""));
+    const links=[["DuckDuckGo","https://duckduckgo.com/?q="],["Wikipedia","https://en.wikipedia.org/w/index.php?search="],["Bing","https://www.bing.com/search?q="],["Internet Archive","https://archive.org/search?query="]];
+    return page(`<h2>Search for “${esc(q)}”</h2><p>Search engines don’t allow embedding, so pick one to open in a new tab.</p><div class="list">${links.map(l=>`<div class="row"><span><strong>${l[0]}</strong></span><a class="pill" target="_blank" rel="noopener noreferrer" href="${l[1]+encodeURIComponent(q)}">Open ↗</a></div>`).join("")}</div>`);
+  }
+  return page("<h2>Page not found</h2><p>That comland:// address doesn’t exist. Try comland://home.</p>");
+}
+function sUrl(t,q){return "comland://search?t="+t+"&q="+encodeURIComponent(q)}
+function searchPage(u){
+  const qs=new URLSearchParams(u.split("?").slice(1).join("?")),q=qs.get("q")||"",t=["info","images","sites"].includes(qs.get("t"))?qs.get("t"):"info";
+  const p=page(`<form class="search" id="sf2" style="margin:0 auto 14px"><input id="sq2" value="${esc(q)}" aria-label="Search"><button>Search</button></form><div class="modes">${[["info","Info"],["images","Images"],["sites","Websites"]].map(m=>`<button class="${m[0]===t?"on":""}" data-t="${m[0]}">${m[1]}</button>`).join("")}</div><div id="res"><p class="muted">Searching…</p></div>`);
+  p.querySelector("#sf2").onsubmit=e=>{e.preventDefault();const v=p.querySelector("#sq2").value.trim();if(v)go(sUrl(t,v))};
+  p.querySelectorAll(".modes button").forEach(b=>b.onclick=()=>go(sUrl(b.dataset.t,q)));
+  return p;
+}
+function showInfo(res,text){
+  res.innerHTML="";
+  String(text).split(/\n\s*\n/).filter(Boolean).forEach(x=>{const e=document.createElement("p");e.className="info";e.textContent=x.trim();res.appendChild(e)});
+  const n=document.createElement("p");n.className="muted";n.textContent="Written by Claude from its own knowledge. It can be wrong, so double-check anything important.";res.appendChild(n);
+}
+async function runSearch(p,u){
+  const qs=new URLSearchParams(u.split("?").slice(1).join("?")),q=qs.get("q")||"",t=qs.get("t")||"info",res=p.querySelector("#res");
+  const fail=m=>{res.innerHTML="";const d=document.createElement("p");d.textContent=m;res.appendChild(d)};
+  const ql=q.toLowerCase(),qc=ql.replace(/[^a-z0-9.]/g,"");
+  if(blockedSearch(u)){
+    res.innerHTML="";const h=document.createElement("h2");h.textContent="The Topic Or Website You Searched Is Blocked By The Colandian Government";res.appendChild(h);return;
+  }
+  let s=null;try{s=window.claude?await window.claude.use("sample"):null}catch(e){}
+  if(!s) return webSearch(res,t,q,fail);
+  if(await unsafe(s,"search request",q)){p.replaceWith(blockedPage("This topic is Blocked by the Colandian Government"));return}
+  try{
+    if(t==="info"){
+      const r=await s("Write an encyclopedia-style summary for the search query below. 2 to 4 short paragraphs, plain text only, no markdown, no preamble. If the query is ambiguous, briefly cover the main meanings.\nQuery: "+q,{modelTier:"quick",onText:x=>showInfo(res,x.text)});
+      showInfo(res,r.text);
+    }else if(t==="sites"){
+      const arr=await s.json("Return ONLY a JSON array of 6 objects with keys title, url, desc (one short sentence). They are the best well-known websites for the search query below. Use only real https URLs of official or established sites; if unsure of an exact page, use the site’s root domain.\nQuery: "+q,{modelTier:"quick"});
+      const list=(Array.isArray(arr)?arr:[]).filter(x=>x&&typeof x.url==="string"&&/^https:\/\//.test(x.url)&&!isBlocked(x.url));
+      res.innerHTML="";
+      if(!list.length) return fail("No websites found. Try different words.");
+      const box=document.createElement("div");box.className="list";
+      list.forEach(x=>{const r=document.createElement("div");r.className="row";const b=document.createElement("button");b.className="go";b.textContent=x.title||x.url;const sm=document.createElement("small");sm.textContent=x.url+" — "+(x.desc||"");b.appendChild(sm);b.onclick=()=>go(x.url);r.appendChild(b);box.appendChild(r)});
+      res.appendChild(box);
+      const n=document.createElement("p");n.className="muted";n.textContent="Suggested by Claude. Links aren’t checked, and some sites can’t load inside a browser page.";res.appendChild(n);
+    }else{
+      const arr=await s.json("Return ONLY a JSON array of 6 objects with keys caption and svg. Each svg is a simple, flat, colorful illustration related to the search query below, as a complete standalone SVG string starting with <svg viewBox=\"0 0 200 200\" xmlns=\"http://www.w3.org/2000/svg\">, no text elements, no scripts, under 700 characters.\nQuery: "+q,{modelTier:"default"});
+      const list=(Array.isArray(arr)?arr:[]).filter(x=>x&&typeof x.svg==="string"&&x.svg.trim().startsWith("<svg")&&x.svg.length<5000);
+      res.innerHTML="";
+      if(!list.length) return fail("No images made. Try different words.");
+      const g=document.createElement("div");g.className="grid";
+      list.forEach(x=>{const f=document.createElement("figure");const i=document.createElement("img");i.alt=x.caption||q;i.src="data:image/svg+xml;utf8,"+encodeURIComponent(x.svg);const c=document.createElement("figcaption");c.textContent=x.caption||"";f.appendChild(i);f.appendChild(c);g.appendChild(f)});
+      res.appendChild(g);
+      const n=document.createElement("p");n.className="muted";n.textContent="These are illustrations drawn by Claude, not photos from the web.";res.appendChild(n);
+    }
+  }catch(e){
+    if(e&&e.code==="not_granted") return webSearch(res,t,q,fail);
+    fail(e&&e.code==="rate_limited"?"Too many searches. Wait a moment and try again.":"Search failed. Try again.");
+  }
+}
+/* Search used outside Claude: Wikipedia + Wikimedia Commons public APIs (CORS enabled) */
+const WIKI="https://en.wikipedia.org/w/api.php?format=json&origin=*&";
+const COMMONS="https://commons.wikimedia.org/w/api.php?format=json&origin=*&";
+const plain=h=>{const d=new DOMParser().parseFromString(String(h),"text/html");return d.body.textContent||""};
+const okText=x=>!blockedSearch("comland://search?q="+encodeURIComponent(x));
+async function jget(url){const r=await fetch(url);if(!r.ok)throw new Error("http");return r.json()}
+function engineLinks(res,q){
+  const links=[["DuckDuckGo","https://duckduckgo.com/?q="],["Bing","https://www.bing.com/search?q="],["Internet Archive","https://archive.org/search?query="]];
+  const h=document.createElement("h2");h.textContent="Search the wider web";h.style.fontSize="18px";h.style.marginTop="22px";res.appendChild(h);
+  const box=document.createElement("div");box.className="list";
+  links.forEach(l=>{const r=document.createElement("div");r.className="row";const sp=document.createElement("strong");sp.textContent=l[0];const a=document.createElement("a");a.className="pill";a.target="_blank";a.rel="noopener noreferrer";a.href=l[1]+encodeURIComponent(q);a.textContent="Open \u2197";r.appendChild(sp);r.appendChild(a);box.appendChild(r)});
+  res.appendChild(box);
+}
+function note(res,txt){const n=document.createElement("p");n.className="muted";n.textContent=txt;res.appendChild(n)}
+async function webSearch(res,t,q,fail){
+  try{
+    if(t==="info"){
+      const d=await jget(WIKI+"action=query&generator=search&gsrlimit=3&gsrsearch="+encodeURIComponent(q)+"&prop=extracts&exintro=1&explaintext=1&exlimit=max");
+      const pages=Object.values((d.query&&d.query.pages)||{}).sort((a,b)=>a.index-b.index).filter(p=>p.extract&&okText(p.title)&&okText(p.extract.slice(0,400)));
+      res.innerHTML="";
+      if(!pages.length){fail("No results found. Try different words.");engineLinks(res,q);return}
+      pages.forEach((p,i)=>{
+        const h=document.createElement("h2");h.textContent=p.title;h.style.fontSize=i?"18px":"22px";res.appendChild(h);
+        p.extract.trim().split(/\n+/).slice(0,i?1:3).forEach(x=>{const e=document.createElement("p");e.className="info";e.textContent=x;res.appendChild(e)});
+        const b=document.createElement("button");b.className="pill";b.textContent="Read the full article";b.onclick=()=>go("https://en.wikipedia.org/wiki/"+encodeURIComponent(p.title.replace(/ /g,"_")));res.appendChild(b);
+      });
+      note(res,"Summaries from Wikipedia.");engineLinks(res,q);
+    }else if(t==="sites"){
+      const d=await jget(WIKI+"action=query&list=search&srlimit=8&srsearch="+encodeURIComponent(q));
+      const list=((d.query&&d.query.search)||[]).filter(x=>okText(x.title));
+      res.innerHTML="";
+      if(!list.length){fail("No websites found. Try different words.");engineLinks(res,q);return}
+      const box=document.createElement("div");box.className="list";
+      list.forEach(x=>{const r=document.createElement("div");r.className="row";const b=document.createElement("button");b.className="go";b.textContent=x.title;const sm=document.createElement("small");sm.textContent=plain(x.snippet)+"\u2026";b.appendChild(sm);b.onclick=()=>go("https://en.wikipedia.org/wiki/"+encodeURIComponent(x.title.replace(/ /g,"_")));r.appendChild(b);box.appendChild(r)});
+      res.appendChild(box);note(res,"Pages found on Wikipedia.");engineLinks(res,q);
+    }else{
+      const d=await jget(COMMONS+"action=query&generator=search&gsrnamespace=6&gsrlimit=18&gsrsearch="+encodeURIComponent(q)+"&prop=imageinfo&iiprop=url&iiurlwidth=360");
+      const list=Object.values((d.query&&d.query.pages)||{}).sort((a,b)=>a.index-b.index).filter(p=>p.imageinfo&&p.imageinfo[0]&&/\.(jpe?g|png|gif|svg|webp)$/i.test(p.title)&&okText(p.title));
+      res.innerHTML="";
+      if(!list.length){fail("No images found. Try different words.");engineLinks(res,q);return}
+      const g=document.createElement("div");g.className="grid";
+      list.forEach(p=>{const ii=p.imageinfo[0],f=document.createElement("figure"),i=document.createElement("img");const cap=p.title.replace(/^File:/,"").replace(/\.[a-z0-9]+$/i,"");i.alt=cap;i.loading="lazy";i.referrerPolicy="no-referrer";i.src=ii.thumburl||ii.url;i.style.objectFit="cover";const c=document.createElement("figcaption");c.textContent=cap;f.appendChild(i);f.appendChild(c);g.appendChild(f)});
+      res.appendChild(g);note(res,"Images from Wikimedia Commons.");engineLinks(res,q);
+    }
+  }catch(e){fail("Search couldn\u2019t reach the web. Check your connection and try again.");engineLinks(res,q)}
+}
+function blockedSearch(u){
+  const q=(new URLSearchParams(u.split("?").slice(1).join("?")).get("q")||"").toLowerCase(),qc=q.replace(/[^a-z0-9.]/g,"");
+  return BLOCK_TERMS.some(w=>new RegExp("(^|[^a-z0-9])"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).test(q))||BRAND_TERMS.some(w=>qc.includes(w))||BLOCKED.some(d=>qc.includes(d));
+}
+const SAFE=["youtube.com","youtube-nocookie.com","youtu.be","discord.com","discord.gg","roblox.com","wikipedia.org","wikimedia.org","archive.org","github.com","google.com","openstreetmap.org","twitch.tv","minecraft.net","mozilla.org","claude.ai","anthropic.com","widgetbot.io","daynighttimegh.github.io"];
+const verdicts=new Map(),siteBad=new Map();
+function hostOf(u){try{return new URL(u).hostname.toLowerCase().replace(/^www\./,"")}catch(e){return ""}}
+function safeHost(u){const h=hostOf(u);return SAFE.some(d=>h===d||h.endsWith("."+d))}
+async function unsafe(s,kind,text){
+  const key=kind+"|"+text;
+  if(verdicts.has(key)) return verdicts.get(key);
+  let bad=false;
+  try{
+    const r=await s.json("You are the content filter for a family-friendly browser. Decide whether this "+kind+" is about any of: adult content, gambling, scams or phishing, malware or pirated software, hacking into accounts or devices, illegal drugs, weapons or making dangerous things, extreme gore, hate groups, or encouraging self-harm. Ordinary news, school, health, safety, games and social media are fine. If unsure, answer false. Reply ONLY with JSON like {\"block\":false}.\n"+kind+": "+text,{modelTier:"quick"});
+    bad=!!(r&&r.block===true);
+  }catch(e){}
+  verdicts.set(key,bad);return bad;
+}
+async function vetSite(u,id){
+  const h=hostOf(u);let bad=false;
+  try{const s=window.claude?await window.claude.use("sample"):null;if(s)bad=await unsafe(s,"web address",h)}catch(e){}
+  siteBad.set(h,bad);
+  const tt=tabs.find(x=>x.id===id);
+  if(tt&&tt.hist[tt.i]===u) render();
+}
+function ytEmbed(u){
+  try{
+    if(isBlocked(u)) return u;
+    const x=new URL(u),h=x.hostname.toLowerCase().replace(/^(www|m)\./,"");
+    let id=null;
+    if(h==="discord.com"){
+      const m=x.pathname.match(/^\/channels\/(\d+)\/(\d+)/);
+      if(m) return "https://e.widgetbot.io/channels/"+m[1]+"/"+m[2];
+      if(["/","/app","/login"].includes(x.pathname)||x.pathname.startsWith("/channels")) return "comland://discord";
+    }
+    if(h==="youtu.be") id=x.pathname.slice(1).split("/")[0];
+    else if(h==="youtube.com"){
+      if(x.pathname==="/watch") id=x.searchParams.get("v");
+      else if(x.pathname.startsWith("/live/")) id=x.pathname.split("/")[2];
+      else if(x.pathname==="/playlist"&&x.searchParams.get("list")) return "https://www.youtube-nocookie.com/embed/videoseries?list="+encodeURIComponent(x.searchParams.get("list"));
+      else if(x.pathname==="/") return "comland://youtube";
+    }
+    if(id&&/^[\w-]{6,15}$/.test(id)){const s=parseInt(x.searchParams.get("t")||"",10);return "https://www.youtube-nocookie.com/embed/"+id+(s>0?"?start="+s:"")}
+  }catch(e){}
+  return u;
+}
+function wire(v){
+  const df=v.querySelector("#df");if(df)df.onsubmit=e=>{e.preventDefault();const s=v.querySelector("#dsv").value.trim(),c=v.querySelector("#dch").value.trim(),m=v.querySelector("#dmsg");if(!/^\d{15,22}$/.test(s)||!/^\d{15,22}$/.test(c)){m.textContent="Server ID and channel ID are long numbers. Copy them from Discord with Developer Mode on.";return}try{localStorage.setItem("comland-discord",JSON.stringify({s,c}))}catch(x){}go("https://e.widgetbot.io/channels/"+s+"/"+c)};
+  const yf=v.querySelector("#yf");if(yf)yf.onsubmit=e=>{e.preventDefault();go(v.querySelector("#yq").value)};
+  v.querySelectorAll("[data-phone]").forEach(b=>b.onclick=()=>go(PHONE_URL));
+  v.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>go(b.dataset.u));
+  v.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>go(SITES[b.dataset.s][2]));
+  v.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{marks.splice(+b.dataset.r,1);saveMarks();render()});
+  const f=v.querySelector("#sf"); if(f) f.onsubmit=e=>{e.preventDefault();go(v.querySelector("#sq").value)};
+}
+function render(){
+  const t=tab(),v=$("view");
+  if(isCallTarget(t.hist[t.i])){t.hist=[PHONE_URL];t.i=0}
+  const u=t.hist[t.i];
+  renderTabs(); renderMarks();
+  $("url").value=u.startsWith("comland://home")?"":u;
+  const marked=marks.some(m=>m.url===u); $("star").textContent=marked?"★":"☆";
+  $("ext").disabled=u.startsWith("comland://")||isBlocked(u);
+  v.innerHTML="";
+  if(u.startsWith("comland://search")&&blockedSearch(u)){v.appendChild(blockedPage("This topic is Blocked by the Colandian Government"))}
+  else if(u.startsWith("comland://")){const p=internal(u);v.appendChild(p);wire(p);if(u.startsWith("comland://search"))runSearch(p,u)}
+  else if(isBlocked(u)){v.appendChild(blockedPage())}
+  else if(siteBad.get(hostOf(u))===true){v.appendChild(blockedPage())}
+  else if(!safeHost(u)&&!siteBad.has(hostOf(u))){v.appendChild(page("<h2>Checking this site…</h2><p class='muted'>The Colandian filter is making sure it’s safe.</p>"));vetSite(u,t.id)}
+  else{
+    const f=document.createElement("iframe"); f.src=u; f.title=titleOf(u);
+    f.setAttribute("referrerpolicy",u.includes("youtube-nocookie.com")?"strict-origin-when-cross-origin":"no-referrer"); f.allowFullscreen=true; f.setAttribute("allow","fullscreen; picture-in-picture; autoplay; encrypted-media"); f.setAttribute("sandbox","allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox");
+    v.appendChild(f);
+    const n=document.createElement("div"); n.className="note";
+    n.innerHTML=`<span>Blank or refused? This site may block embedding.</span><span><a target="_blank" rel="noopener noreferrer" href="${esc(u)}">Open in a real tab ↗</a> <button id="nx">Dismiss</button></span>`;
+    v.appendChild(n); n.querySelector("#nx").onclick=()=>n.remove();
+  }
+}
+$("url").addEventListener("keydown",e=>{if(e.key==="Enter"){go(e.target.value);e.target.blur()}});
+$("url").addEventListener("focus",e=>e.target.select());
+$("reload").onclick=render;
+$("home").onclick=()=>go("comland://home");
+$("star").onclick=()=>{
+  const u=tab().hist[tab().i],k=marks.findIndex(m=>m.url===u);
+  if(k>=0) marks.splice(k,1); else marks.push({url:u,title:titleOf(u)});
+  saveMarks(); render();
+};
+$("ext").onclick=()=>{const u=tab().hist[tab().i];if(!u.startsWith("comland://")&&!isBlocked(u))window.open(u,"_blank","noopener,noreferrer")};
+document.addEventListener("keydown",e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==="l"){e.preventDefault();$("url").focus()}
+});
+newTab();
+</script>
+</body>
+</html>
