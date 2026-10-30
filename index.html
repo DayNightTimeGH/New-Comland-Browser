@@ -426,7 +426,10 @@ window.COMLAND_FIREBASE={
 <script type="module">
 const cfg=window.COMLAND_FIREBASE;
 if(cfg&&!String(cfg.apiKey).startsWith("PASTE")){
-try{
+const gate0=document.getElementById("gate");
+const fail0=m=>{gate0.innerHTML='<div class="gin"><h1>Sign-in unavailable</h1><p>'+m+'</p><button onclick="location.reload()">Try again</button></div>';gate0.hidden=false};
+if(!/^https?:$/.test(location.protocol)){fail0("Google sign-in only works when this page is opened from its web address (your https://...github.io link), not from a saved file.")}
+else try{
 const V="10.14.1",B="https://www.gstatic.com/firebasejs/"+V+"/";
 const [A,Au,Fs]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-auth.js"),import(B+"firebase-firestore.js")]);
 const app=A.initializeApp(cfg),auth=Au.getAuth(app),db=Fs.getFirestore(app);
@@ -476,7 +479,7 @@ window.comlandReport=async()=>{
   }catch(e){console.error(e)}
   busy=false;
 };
-}catch(e){console.error("Firebase failed to load",e)}
+}catch(e){console.error("Firebase failed to load",e);fail0("Couldn’t start sign-in ("+String(e&&e.code||e&&e.message||e).replace(/[<>&]/g,"")+"). Check your connection and that this page’s address is in Firebase’s authorized domains.")}
 }
 </script>
 </body>
